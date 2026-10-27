@@ -9,6 +9,9 @@ import { createV1 } from './v1.js';
 //   /v1/…   the versioned API described in CONTRACT.md — src/v1.js.
 
 const legacyError = (res, status, code, message, headers) => send(res, status, { error: code, message }, headers);
+// CONTRACT.md §5: every legacy response, errors included, announces its end of life.
+const LEGACY_HEADERS = { Deprecation: '@1792022400', Sunset: 'Thu, 31 Dec 2026 23:59:59 GMT' };
+const isV1Path = (pathname) => pathname === '/v1' || pathname.startsWith('/v1/');
 const isPrice = (p) => typeof p === 'number' && Number.isFinite(p) && p > 0 && p <= 100000;
 
 export function createApp(db) {
@@ -44,7 +47,8 @@ export function createApp(db) {
       const id = Number(parts[1]);
       const row = Number.isInteger(id) ? q.get.get(id) : undefined;
       if (!row) return legacyError(res, 404, 'not_found', `menu item ${parts[1]} not found`, h);
-      if (req.method === 'GET') return send(res, 200, legacyView(row), h);
+      if (req.method === 'GET')
+        return send(res, 200, legacyView(row), { ...h, Link: `</v1/menu/${row.id}>; rel="successor-version"` });
       if (req.method === 'PATCH') {
         let body; try { body = JSON.parse((await readRaw(req)) || '{}'); } catch { body = null; }
         if (!body || !isPrice(body.price))
@@ -60,16 +64,17 @@ export function createApp(db) {
   async function handle(req, res) {
     const url = new URL(req.url, 'http://x');
     if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true });
-    if (url.pathname === '/v1' || url.pathname.startsWith('/v1/')) {
+    if (isV1Path(url.pathname)) {
       if (await v1(req, res, url)) return;
     }
-    return legacy(req, res, url, {});
+    return legacy(req, res, url, LEGACY_HEADERS);
   }
 
   return createServer((req, res) => {
     handle(req, res).catch((e) => {
       console.error(e);
-      if (!res.headersSent) legacyError(res, 500, 'internal', e.message);
+      // Only legacy routes reach here (/v1 answers its own errors); they keep their headers.
+      if (!res.headersSent) legacyError(res, 500, 'internal', e.message, LEGACY_HEADERS);
     });
   });
 }
