@@ -24,3 +24,17 @@ Asked for (the handover prompt, as in the README):
 Kept: everything, committed exactly as the agent wrote it, before any contract run: `src/v1.js` (all endpoints, problem details, cursor pagination, idempotency in one `BEGIN IMMEDIATE` transaction), `src/app.js` (Deprecation and Sunset on every legacy response, `Link` on a successful `GET /menu/{id}`), `migrations/002_idempotency_keys.up.sql` and `.down.sql`. Checked: `npm test` is 3 of 3; I did not run `npm run contract` yet.
 Changed: nothing yet — this is the agent's first attempt, untouched.
 Rejected: nothing yet. Fixes and anything I throw away are logged after the first contract run.
+
+## 2026-10-27 — Phase 4: first contract run, and checking that 29 of 29 is real
+Tool: Claude Code.
+Asked for: run `npm run contract 2>&1 | tee contract-run-1.txt` before any fix and commit it; then, because everything passed, check whether the pass came from the code or from changed tests: "pass hết mà không có gì fail theo bạn là do bạn đã sửa code gốc hay test hay là bản chất nó có thể pass hết? hãy check lại xem".
+Kept: the first run as it is (legacy 3 of 3, contract 29 of 29, commit `faf9439`). The check: `git diff` of `test/` and `CONTRACT.md` against the starter and against `upstream/main` is empty; in a throw-away copy, four deliberate bugs were planted one at a time — raw-text fingerprint (fails 1), offset in the cursor (fails 1), no legacy headers (fails 3), fingerprint without unknown fields (fails **0**).
+Changed: nothing in the code.
+Rejected: the idea that a green first run needs no further checking — the planted-bug check found a gap in the suite (written up in `NOTES.md` §4).
+
+## 2026-10-27 — Phase 6: sentences that could be read two ways
+Tool: Claude Code.
+Asked for: "Which sentences of `CONTRACT.md` could be read two ways, and what did you choose for each?"
+Kept: the agent's nine points (A1–A9 in `NOTES.md` §3.1) and its choice for each, after it checked every choice against a running server on a throw-away database. I chose A1, A2, A3 as the three points for criterion 4.
+Changed: the agent drafted a reason and a contract sentence per point; I decided to keep all nine choices. I added one point the agent did not list (§1 "ignores unknown fields" against §4.2 "any other difference does"), taken from my own Prediction 1.
+Rejected: the agent's list as complete — it missed the unknown-field point above, which the tests do not catch either.
