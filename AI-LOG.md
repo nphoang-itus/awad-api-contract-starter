@@ -38,3 +38,10 @@ Asked for: "Which sentences of `CONTRACT.md` could be read two ways, and what di
 Kept: the agent's nine points (A1–A9 in `NOTES.md` §3.1) and its choice for each, after it checked every choice against a running server on a throw-away database. I chose A1, A2, A3 as the three points for criterion 4.
 Changed: the agent drafted a reason and a contract sentence per point; I decided to keep all nine choices. I added one point the agent did not list (§1 "ignores unknown fields" against §4.2 "any other difference does"), taken from my own Prediction 1.
 Rejected: the agent's list as complete — it missed the unknown-field point above, which the tests do not catch either.
+
+## 2026-10-27 — Phase 7: final run and checks before submitting
+Tool: Claude Code.
+Asked for: re-run everything the way the grader does and save `contract-run-final.txt`.
+Kept: a fresh `git clone` of the repository: `migrate && seed && test && contract` gives legacy 3 of 3 and contract 29 of 29. In the repository itself, from an empty `data/`: the same, saved as `contract-run-final.txt`. `migrate:down` reverts `002_idempotency_keys` and `migrate` re-applies it. `git diff ee78c39 -- test/ CONTRACT.md` is empty; no `CREATE TABLE` outside `migrations/`. Commit order: predictions `8e88da5` → agent `b3126ad` → first run `faf9439`.
+Changed: nothing in `src/` — there was no fix between the first and the final run.
+Rejected: nothing.
